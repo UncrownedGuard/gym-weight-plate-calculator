@@ -47,6 +47,21 @@
       box-sizing: border-box;
     }
 
+    .plate-checklist {
+      text-align: left;
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .plate-checklist label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: normal;
+    }
+
     button {
       background-color: #0b5394;
       color: #fff;
@@ -115,10 +130,12 @@
       </select>
 
       <label for="gwpcTotalWeight">Enter Total Weight:</label>
-      <input type="number" id="gwpcTotalWeight" name="gwpcTotalWeight" min="1" required>
+      <input type="number" id="gwpcTotalWeight" min="1" required>
 
       <label for="gwpcBarWeight">Select Bar Weight:</label>
       <select id="gwpcBarWeight"></select>
+
+      <div id="plateChecklist" class="plate-checklist"></div>
 
       <button type="submit">Calculate</button>
     </form>
@@ -133,19 +150,35 @@
     };
 
     const plateOptions = {
-      lbs: [45, 25, 10, 5, 2.5],
+      lbs: [45, 35, 25, 10, 5, 2.5],
       kg: [25, 20, 15, 10, 5, 2.5, 1.25]
     };
 
     function updateUnitOptions() {
       const unit = document.getElementById("unit").value;
       const barSelect = document.getElementById("gwpcBarWeight");
+      const checklist = document.getElementById("plateChecklist");
+
+      // Update bar weights
       barSelect.innerHTML = "";
       barOptions[unit].forEach(weight => {
         const option = document.createElement("option");
         option.value = weight;
         option.text = weight;
         barSelect.appendChild(option);
+      });
+
+      // Update plate checklist
+      checklist.innerHTML = "";
+      plateOptions[unit].forEach(plate => {
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = plate;
+        checkbox.checked = true;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(`${plate} ${unit}`));
+        checklist.appendChild(label);
       });
     }
 
@@ -166,11 +199,20 @@
         return;
       }
 
-      workingWeight /= 2; // one side
-      const availablePlates = plateOptions[unit];
+      workingWeight /= 2;
+
+      // Only use checked plates
+      const selectedPlates = Array.from(document.querySelectorAll("#plateChecklist input:checked"))
+        .map(el => parseFloat(el.value))
+        .sort((a, b) => b - a);
+
+      if (selectedPlates.length === 0) {
+        document.getElementById("gwpcResults").innerHTML = "Please select at least one plate size.";
+        return;
+      }
+
       let result = `<strong>Plates on each side (${unit}):</strong><br>`;
-      
-      availablePlates.forEach(plate => {
+      selectedPlates.forEach(plate => {
         let count = 0;
         while (workingWeight >= plate) {
           workingWeight -= plate;
@@ -188,7 +230,6 @@
       document.getElementById("gwpcResults").innerHTML = result;
     }
 
-    // Initialize bar options on load
     window.onload = updateUnitOptions;
   </script>
 
