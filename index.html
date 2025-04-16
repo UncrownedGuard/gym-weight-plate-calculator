@@ -20,7 +20,7 @@
       background-color: #2c2c2c;
       border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
 
     h3 {
@@ -108,16 +108,17 @@
   <div class="widget">
     <h3>Gym Weight Plate Calculator</h3>
     <form id="gwpcForm" onsubmit="event.preventDefault(); gwpcCalculatePlates();">
-      <label for="gwpcTotalWeight">Enter Total Weight (in lbs):</label>
+      <label for="unit">Measurement System:</label>
+      <select id="unit" onchange="updateUnitOptions()">
+        <option value="lbs" selected>Pounds (lbs)</option>
+        <option value="kg">Kilograms (kg)</option>
+      </select>
+
+      <label for="gwpcTotalWeight">Enter Total Weight:</label>
       <input type="number" id="gwpcTotalWeight" name="gwpcTotalWeight" min="1" required>
 
-      <label for="gwpcBarWeight">Select Bar Weight (in lbs):</label>
-      <select id="gwpcBarWeight" name="gwpcBarWeight">
-        <option value="45">45</option>
-        <option value="35">35</option>
-        <option value="25">25</option>
-        <option value="0">0</option>
-      </select>
+      <label for="gwpcBarWeight">Select Bar Weight:</label>
+      <select id="gwpcBarWeight"></select>
 
       <button type="submit">Calculate</button>
     </form>
@@ -126,43 +127,69 @@
   </div>
 
   <script>
+    const barOptions = {
+      lbs: [45, 35, 25, 0],
+      kg: [20, 15, 10, 0]
+    };
+
+    const plateOptions = {
+      lbs: [45, 25, 10, 5, 2.5],
+      kg: [25, 20, 15, 10, 5, 2.5, 1.25]
+    };
+
+    function updateUnitOptions() {
+      const unit = document.getElementById("unit").value;
+      const barSelect = document.getElementById("gwpcBarWeight");
+      barSelect.innerHTML = "";
+      barOptions[unit].forEach(weight => {
+        const option = document.createElement("option");
+        option.value = weight;
+        option.text = weight;
+        barSelect.appendChild(option);
+      });
+    }
+
     function gwpcCalculatePlates() {
-      const weights = [45, 35, 25, 10, 5, 2.5];
-      let weight = parseFloat(document.getElementById("gwpcTotalWeight").value);
+      const unit = document.getElementById("unit").value;
+      const totalWeight = parseFloat(document.getElementById("gwpcTotalWeight").value);
       const barWeight = parseFloat(document.getElementById("gwpcBarWeight").value);
 
-      if (isNaN(weight) || isNaN(barWeight)) {
+      if (isNaN(totalWeight) || isNaN(barWeight)) {
         document.getElementById("gwpcResults").innerHTML = "Please enter valid weights.";
         return;
       }
 
-      weight -= barWeight;
+      let workingWeight = totalWeight - barWeight;
 
-      if (weight < 0) {
-        document.getElementById("gwpcResults").innerHTML = "Weight must be more than the bar weight.";
+      if (workingWeight < 0) {
+        document.getElementById("gwpcResults").innerHTML = "Total weight must be more than the bar weight.";
         return;
       }
 
-      weight /= 2; // divide across both sides
-      let result = "<strong>Plates on each side:</strong><br>";
-
-      weights.forEach(function (w) {
+      workingWeight /= 2; // one side
+      const availablePlates = plateOptions[unit];
+      let result = `<strong>Plates on each side (${unit}):</strong><br>`;
+      
+      availablePlates.forEach(plate => {
         let count = 0;
-        while (weight >= w) {
-          weight -= w;
+        while (workingWeight >= plate) {
+          workingWeight -= plate;
           count++;
         }
         if (count > 0) {
-          result += `${count} x ${w} lb plate<br>`;
+          result += `${count} x ${plate} ${unit}<br>`;
         }
       });
 
-      if (weight > 0) {
-        result += `<br>Remaining weight to add on each side: ${weight.toFixed(2)} lbs`;
+      if (workingWeight > 0) {
+        result += `<br>Remaining weight per side: ${workingWeight.toFixed(2)} ${unit}`;
       }
 
       document.getElementById("gwpcResults").innerHTML = result;
     }
+
+    // Initialize bar options on load
+    window.onload = updateUnitOptions;
   </script>
 
 </body>
